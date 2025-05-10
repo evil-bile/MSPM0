@@ -1,31 +1,31 @@
 #ifndef __ENCODER_H__
 #define __ENCODER_H__
 
-#include "main.h"
+// #include "main.h"
 
-//µç»ú»ù±¾²ÎÊı
-#define ENCODE_13X 13 		//±àÂëÆ÷ÏßÊı
-#define JIANSUBI 20     	//¼õËÙ±È
-#define BEIPIN 8            //±¶Æµ
-#define SAMPLE_TIME 0.01	//²ÉÑùÊ±¼ä
-#define CC (ENCODE_13X*JIANSUBI*BEIPIN*SAMPLE_TIME)
+// //ç”µæœºåŸºæœ¬å‚æ•°
+// #define ENCODE_13X 13 		//ç¼–ç å™¨çº¿æ•°
+// #define JIANSUBI 20     	//å‡é€Ÿæ¯”
+// #define BEIPIN 8            //å€é¢‘
+// #define SAMPLE_TIME 0.01	//é‡‡æ ·æ—¶é—´
+// #define CC (ENCODE_13X*JIANSUBI*BEIPIN*SAMPLE_TIME)
 
-#define PI  3.1415f
-#define RR  20.5f    		//³µÂÖ°ë¾¶µ¥Î»cm
+// #define PI  3.1415f
+// #define RR  20.5f    		//è½¦è½®åŠå¾„å•ä½cm
 
-/*±àÂëÆ÷¶Ë¿Ú¶ÁÈ¡ºê¶¨Òå*/
-#define Read_Encoder_A 	(DL_GPIO_readPins(Encoder_PORT,Encoder_A_PIN)==Encoder_A_PIN)?0:1//×óÂÖ AÏà
-#define Read_Encoder_B  (DL_GPIO_readPins(Encoder_PORT,Encoder_B_PIN)==Encoder_B_PIN)?0:1//×óÂÖ BÏà
-#define Read_Encoder_C 	(DL_GPIO_readPins(Encoder_PORT,Encoder_C_PIN)==Encoder_C_PIN)?0:1//ÓÒÂÖ AÏà
-#define Read_Encoder_D 	(DL_GPIO_readPins(Encoder_PORT,Encoder_D_PIN)==Encoder_D_PIN)?0:1//ÓÒÂÖ BÏà
+// /*ç¼–ç å™¨ç«¯å£è¯»å–å®å®šä¹‰*/
+// #define Read_Encoder_A 	(DL_GPIO_readPins(Encoder_PORT,Encoder_A_PIN)==Encoder_A_PIN)?0:1//å·¦è½® Aç›¸
+// #define Read_Encoder_B  (DL_GPIO_readPins(Encoder_PORT,Encoder_B_PIN)==Encoder_B_PIN)?0:1//å·¦è½® Bç›¸
+// #define Read_Encoder_C 	(DL_GPIO_readPins(Encoder_PORT,Encoder_C_PIN)==Encoder_C_PIN)?0:1//å³è½® Aç›¸
+// #define Read_Encoder_D 	(DL_GPIO_readPins(Encoder_PORT,Encoder_D_PIN)==Encoder_D_PIN)?0:1//å³è½® Bç›¸
 
-extern float Motor1_Speed;
-extern float Motor2_Speed;
-extern float Measure_Distance;
+// extern float Motor1_Speed;
+// extern float Motor2_Speed;
+// extern float Measure_Distance;
 
-void Motor1_Get_Speed(void);
-void Motor2_Get_Speed(void);
-//²âÁ¿ËùÓĞµç»úËÙ¶È
-void MEASURE_MOTORS_SPEED(void);
+// void Motor1_Get_Speed(void);
+// void Motor2_Get_Speed(void);
+// //æµ‹é‡æ‰€æœ‰ç”µæœºé€Ÿåº¦
+// void MEASURE_MOTORS_SPEED(void);
 
 #endif

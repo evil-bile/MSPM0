@@ -1,404 +1,404 @@
-/*
-£¡£¡£¡±¾´úÂë»ùÓÚÓ²¼þIIC£¡£¡£¡¶¨ÒåÎªMPU6050_I2C_INST
+// /*
+// ï¼ï¼ï¼æœ¬ä»£ç åŸºäºŽç¡¬ä»¶IICï¼ï¼ï¼å®šä¹‰ä¸ºMPU6050_I2C_INST
 
-³õÊ¼»¯£ºmpu6050_init();//³õÊ¼»¯MPU6050
-¶ÁÈ¡Êý¾Ý£º±¾´úÂë¶ÁÈ¡Êý¾ÝµÄË³ÐòÊÇmpu6050_read()»ñÈ¡Ô­Ê¼Êý¾Ý->
-								MPU6050_ReadDatas_Proc()½âËã¼ÓËÙ¶È½ÇËÙ¶ÈµÈËÙ¶ÈÊý¾Ý->
-								AHRS_Geteuler()½âËãÅ·À­½Ç
-ÈôÏëµÃ³öÅ·À­½ÇµÄ»°Ö»Ðèµ÷ÓÃAHRS_Geteuler()º¯Êý¼´¿É£¬×¢Òâ£º´Ëº¯ÊýÖ»ÊÇ¸üÐÂº¯Êý
-ºóÐøÖ±½Ó·ÃÎÊ½á¹¹Ìåmpu6050ÄÚµÄÊý¾Ý¼´¿É
-Ö±½Ó·ÃÎÊGyro_Z_Measeure¿É»ñÈ¡ZÖá½ÇËÙ¶ÈÖµ
-*/
-#include "mpu6050.h"
-#include "delay.h"
-/*-------------------------------------------------------------------------------------------*/
-/*----------------------------------------Ê¹ÓÃ-----------------------------------------------*/
-/*-------------------------------------------------------------------------------------------*/
-#define    MPU6050_I2C_INST		I2C_0_INST		//Ó²¼þIICµÄºê¶¨ÒåÈ¥ti_msp_dl_config.hÈ¥¿´
-//ÔÚÖ÷º¯Êý³õÊ¼»¯µÄµØ·½--µ÷ÓÃ		mpu6050_init()
-//ÔÚ¶¨Ê±Æ÷10msÖÐ¶ÏÖÐ----µ÷ÓÃ		AHRS_Geteuler()
-//¶ÁÈ¡	mpu6050.Pitch	mpu6050.Roll	mpu6050.Yaw
+// åˆå§‹åŒ–ï¼šmpu6050_init();//åˆå§‹åŒ–MPU6050
+// è¯»å–æ•°æ®ï¼šæœ¬ä»£ç è¯»å–æ•°æ®çš„é¡ºåºæ˜¯mpu6050_read()èŽ·å–åŽŸå§‹æ•°æ®->
+// 								MPU6050_ReadDatas_Proc()è§£ç®—åŠ é€Ÿåº¦è§’é€Ÿåº¦ç­‰é€Ÿåº¦æ•°æ®->
+// 								AHRS_Geteuler()è§£ç®—æ¬§æ‹‰è§’
+// è‹¥æƒ³å¾—å‡ºæ¬§æ‹‰è§’çš„è¯åªéœ€è°ƒç”¨AHRS_Geteuler()å‡½æ•°å³å¯ï¼Œæ³¨æ„ï¼šæ­¤å‡½æ•°åªæ˜¯æ›´æ–°å‡½æ•°
+// åŽç»­ç›´æŽ¥è®¿é—®ç»“æž„ä½“mpu6050å†…çš„æ•°æ®å³å¯
+// ç›´æŽ¥è®¿é—®Gyro_Z_Measeureå¯èŽ·å–Zè½´è§’é€Ÿåº¦å€¼
+// */
+// #include "mpu6050.h"
+// #include "delay.h"
+// /*-------------------------------------------------------------------------------------------*/
+// /*----------------------------------------ä½¿ç”¨-----------------------------------------------*/
+// /*-------------------------------------------------------------------------------------------*/
+// #define    MPU6050_I2C_INST		I2C_0_INST		//ç¡¬ä»¶IICçš„å®å®šä¹‰åŽ»ti_msp_dl_config.håŽ»çœ‹
+// //åœ¨ä¸»å‡½æ•°åˆå§‹åŒ–çš„åœ°æ–¹--è°ƒç”¨		mpu6050_init()
+// //åœ¨å®šæ—¶å™¨10msä¸­æ–­ä¸­----è°ƒç”¨		AHRS_Geteuler()
+// //è¯»å–	mpu6050.Pitch	mpu6050.Roll	mpu6050.Yaw
 
 
-MPU6050_DEF mpu6050;
+// MPU6050_DEF mpu6050;
 
-uint8_t i2c0_write_n_byte(uint8_t DevAddr, uint8_t RegAddr, uint8_t *buf, uint8_t nBytes){
-		static uint8_t temp_reg_dddr=0;
-    uint8_t n;
-    uint32_t Byte4Fill;
-    temp_reg_dddr = RegAddr;
-    DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &buf[0], nBytes);
+// uint8_t i2c0_write_n_byte(uint8_t DevAddr, uint8_t RegAddr, uint8_t *buf, uint8_t nBytes){
+// 		static uint8_t temp_reg_dddr=0;
+//     uint8_t n;
+//     uint32_t Byte4Fill;
+//     temp_reg_dddr = RegAddr;
+//     DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &buf[0], nBytes);
 
-    /* Wait for I2C to be Idle */
-    while (!(DL_I2C_getControllerStatus(MPU6050_I2C_INST) & DL_I2C_CONTROLLER_STATUS_IDLE));
+//     /* Wait for I2C to be Idle */
+//     while (!(DL_I2C_getControllerStatus(MPU6050_I2C_INST) & DL_I2C_CONTROLLER_STATUS_IDLE));
 
-    DL_I2C_flushControllerTXFIFO(MPU6050_I2C_INST); 
-    DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &temp_reg_dddr, 1);
+//     DL_I2C_flushControllerTXFIFO(MPU6050_I2C_INST); 
+//     DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &temp_reg_dddr, 1);
 
-    /* Send the packet to the controller.
-     * This function will send Start + Stop automatically.
-     */
-    DL_I2C_startControllerTransfer(MPU6050_I2C_INST, DevAddr,DL_I2C_CONTROLLER_DIRECTION_TX, (nBytes+1));
-    n = 0;
-    do {
-        Byte4Fill = DL_I2C_getControllerTXFIFOCounter(MPU6050_I2C_INST);
-        if(Byte4Fill > 1)
-        {
-            DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &buf[n], 1);
-            n++;
-        }
-    }while(n<nBytes);
+//     /* Send the packet to the controller.
+//      * This function will send Start + Stop automatically.
+//      */
+//     DL_I2C_startControllerTransfer(MPU6050_I2C_INST, DevAddr,DL_I2C_CONTROLLER_DIRECTION_TX, (nBytes+1));
+//     n = 0;
+//     do {
+//         Byte4Fill = DL_I2C_getControllerTXFIFOCounter(MPU6050_I2C_INST);
+//         if(Byte4Fill > 1)
+//         {
+//             DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &buf[n], 1);
+//             n++;
+//         }
+//     }while(n<nBytes);
 
-    /* Poll until the Controller writes all bytes */
-    while (DL_I2C_getControllerStatus(MPU6050_I2C_INST) &DL_I2C_CONTROLLER_STATUS_BUSY_BUS);
+//     /* Poll until the Controller writes all bytes */
+//     while (DL_I2C_getControllerStatus(MPU6050_I2C_INST) &DL_I2C_CONTROLLER_STATUS_BUSY_BUS);
 
-    /* Trap if there was an error */
-    if (DL_I2C_getControllerStatus(MPU6050_I2C_INST) &DL_I2C_CONTROLLER_STATUS_ERROR) 
-		{
-        /* LED will remain high if there is an error */
-        __NOP();//__BKPT(0);
-    }
+//     /* Trap if there was an error */
+//     if (DL_I2C_getControllerStatus(MPU6050_I2C_INST) &DL_I2C_CONTROLLER_STATUS_ERROR) 
+// 		{
+//         /* LED will remain high if there is an error */
+//         __NOP();//__BKPT(0);
+//     }
 
-    /* Add delay between transfers */
-    delay_cycles(1000);
+//     /* Add delay between transfers */
+//     delay_cycles(1000);
 
-    return nBytes;
-}
-void  i2c0_read_n_byte(uint8_t DevAddr, uint8_t RegAddr, uint8_t *buf, uint8_t nBytes){
-		static uint8_t temp_reg_dddr=0;
-    uint8_t n;
-    uint32_t Byte4Fill;
-    temp_reg_dddr = RegAddr;
-    DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &buf[0], nBytes);
+//     return nBytes;
+// }
+// void  i2c0_read_n_byte(uint8_t DevAddr, uint8_t RegAddr, uint8_t *buf, uint8_t nBytes){
+// 		static uint8_t temp_reg_dddr=0;
+//     uint8_t n;
+//     uint32_t Byte4Fill;
+//     temp_reg_dddr = RegAddr;
+//     DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &buf[0], nBytes);
 
-    /* Wait for I2C to be Idle */
-    while (!(DL_I2C_getControllerStatus(MPU6050_I2C_INST) & DL_I2C_CONTROLLER_STATUS_IDLE));
+//     /* Wait for I2C to be Idle */
+//     while (!(DL_I2C_getControllerStatus(MPU6050_I2C_INST) & DL_I2C_CONTROLLER_STATUS_IDLE));
 
-    DL_I2C_flushControllerRXFIFO(MPU6050_I2C_INST); 
-    DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &temp_reg_dddr, 1);
+//     DL_I2C_flushControllerRXFIFO(MPU6050_I2C_INST); 
+//     DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &temp_reg_dddr, 1);
 
-    /* Send the packet to the controller.
-     * This function will send Start + Stop automatically.
-     */
-    DL_I2C_startControllerTransfer(MPU6050_I2C_INST, DevAddr,DL_I2C_CONTROLLER_DIRECTION_TX, (nBytes+1));
-    n = 0;
-    do {
-        Byte4Fill = DL_I2C_getControllerTXFIFOCounter(MPU6050_I2C_INST);
-        if(Byte4Fill > 1)
-        {
-            DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &buf[n], 1);
-            n++;
-        }
-    }while(n<nBytes);
+//     /* Send the packet to the controller.
+//      * This function will send Start + Stop automatically.
+//      */
+//     DL_I2C_startControllerTransfer(MPU6050_I2C_INST, DevAddr,DL_I2C_CONTROLLER_DIRECTION_TX, (nBytes+1));
+//     n = 0;
+//     do {
+//         Byte4Fill = DL_I2C_getControllerTXFIFOCounter(MPU6050_I2C_INST);
+//         if(Byte4Fill > 1)
+//         {
+//             DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &buf[n], 1);
+//             n++;
+//         }
+//     }while(n<nBytes);
 
-    /* Poll until the Controller writes all bytes */
-    while (DL_I2C_getControllerStatus(MPU6050_I2C_INST) &DL_I2C_CONTROLLER_STATUS_BUSY_BUS);
+//     /* Poll until the Controller writes all bytes */
+//     while (DL_I2C_getControllerStatus(MPU6050_I2C_INST) &DL_I2C_CONTROLLER_STATUS_BUSY_BUS);
 
-    /* Trap if there was an error */
-    if (DL_I2C_getControllerStatus(MPU6050_I2C_INST) &DL_I2C_CONTROLLER_STATUS_ERROR) 
-		{
-        /* LED will remain high if there is an error */
-        __NOP();//__BKPT(0);
-    }
-}
-//************I2C write register **********************
-void I2C_WriteReg(uint8_t DevAddr,uint8_t reg_addr, uint8_t *reg_data, uint8_t count){
-    unsigned char I2Ctxbuff[8] = {0x00};
+//     /* Trap if there was an error */
+//     if (DL_I2C_getControllerStatus(MPU6050_I2C_INST) &DL_I2C_CONTROLLER_STATUS_ERROR) 
+// 		{
+//         /* LED will remain high if there is an error */
+//         __NOP();//__BKPT(0);
+//     }
+// }
+// //************I2C write register **********************
+// void I2C_WriteReg(uint8_t DevAddr,uint8_t reg_addr, uint8_t *reg_data, uint8_t count){
+//     unsigned char I2Ctxbuff[8] = {0x00};
 
-    I2Ctxbuff[0] = reg_addr;
-    unsigned char i, j = 1;
+//     I2Ctxbuff[0] = reg_addr;
+//     unsigned char i, j = 1;
 
-    for (i = 0; i < count; i++) {
-        I2Ctxbuff[j] = reg_data[i];
-        j++;
-    }
+//     for (i = 0; i < count; i++) {
+//         I2Ctxbuff[j] = reg_data[i];
+//         j++;
+//     }
 
-    //    DL_I2C_flushControllerTXFIFO(MPU6050_I2C_INST);
-    DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &I2Ctxbuff[0], count + 1);
+//     //    DL_I2C_flushControllerTXFIFO(MPU6050_I2C_INST);
+//     DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &I2Ctxbuff[0], count + 1);
 
-    /* Wait for I2C to be Idle */
-    while (!(DL_I2C_getControllerStatus(MPU6050_I2C_INST) &
-             DL_I2C_CONTROLLER_STATUS_IDLE))
-        ;
+//     /* Wait for I2C to be Idle */
+//     while (!(DL_I2C_getControllerStatus(MPU6050_I2C_INST) &
+//              DL_I2C_CONTROLLER_STATUS_IDLE))
+//         ;
 
-    DL_I2C_startControllerTransfer(MPU6050_I2C_INST, DevAddr,
-        DL_I2C_CONTROLLER_DIRECTION_TX, count + 1);
+//     DL_I2C_startControllerTransfer(MPU6050_I2C_INST, DevAddr,
+//         DL_I2C_CONTROLLER_DIRECTION_TX, count + 1);
 
-    while (DL_I2C_getControllerStatus(MPU6050_I2C_INST) &
-           DL_I2C_CONTROLLER_STATUS_BUSY_BUS)
-        ;
-    /* Wait for I2C to be Idle */
-    while (!(DL_I2C_getControllerStatus(MPU6050_I2C_INST) &
-             DL_I2C_CONTROLLER_STATUS_IDLE))
-        ;
-    //Avoid BQ769x2 to stretch the SCLK too long and generate a timeout interrupt at 400kHz because of low power mode
-    // if(DL_I2C_getRawInterruptStatus(MPU6050_I2C_INST,DL_I2C_INTERRUPT_CONTROLLER_CLOCK_TIMEOUT))
-    // {
-    //     DL_I2C_flushControllerTXFIFO(MPU6050_I2C_INST);
-    //     DL_I2C_clearInterruptStatus(MPU6050_I2C_INST,DL_I2C_INTERRUPT_CONTROLLER_CLOCK_TIMEOUT);
-    //     I2C_WriteReg(reg_addr, reg_data, count);
-    // }
-    DL_I2C_flushControllerTXFIFO(MPU6050_I2C_INST);
-}
-//************I2C read register **********************
-void I2C_ReadReg(uint8_t DevAddr,uint8_t reg_addr, uint8_t *reg_data, uint8_t count){
-    DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &reg_addr, count);
+//     while (DL_I2C_getControllerStatus(MPU6050_I2C_INST) &
+//            DL_I2C_CONTROLLER_STATUS_BUSY_BUS)
+//         ;
+//     /* Wait for I2C to be Idle */
+//     while (!(DL_I2C_getControllerStatus(MPU6050_I2C_INST) &
+//              DL_I2C_CONTROLLER_STATUS_IDLE))
+//         ;
+//     //Avoid BQ769x2 to stretch the SCLK too long and generate a timeout interrupt at 400kHz because of low power mode
+//     // if(DL_I2C_getRawInterruptStatus(MPU6050_I2C_INST,DL_I2C_INTERRUPT_CONTROLLER_CLOCK_TIMEOUT))
+//     // {
+//     //     DL_I2C_flushControllerTXFIFO(MPU6050_I2C_INST);
+//     //     DL_I2C_clearInterruptStatus(MPU6050_I2C_INST,DL_I2C_INTERRUPT_CONTROLLER_CLOCK_TIMEOUT);
+//     //     I2C_WriteReg(reg_addr, reg_data, count);
+//     // }
+//     DL_I2C_flushControllerTXFIFO(MPU6050_I2C_INST);
+// }
+// //************I2C read register **********************
+// void I2C_ReadReg(uint8_t DevAddr,uint8_t reg_addr, uint8_t *reg_data, uint8_t count){
+//     DL_I2C_fillControllerTXFIFO(MPU6050_I2C_INST, &reg_addr, count);
 
-    /* Wait for I2C to be Idle */
-    while (!(DL_I2C_getControllerStatus(MPU6050_I2C_INST) &
-             DL_I2C_CONTROLLER_STATUS_IDLE))
-        ;
+//     /* Wait for I2C to be Idle */
+//     while (!(DL_I2C_getControllerStatus(MPU6050_I2C_INST) &
+//              DL_I2C_CONTROLLER_STATUS_IDLE))
+//         ;
 
-    DL_I2C_startControllerTransfer(
-        MPU6050_I2C_INST, DevAddr, DL_I2C_CONTROLLER_DIRECTION_TX, 1);
+//     DL_I2C_startControllerTransfer(
+//         MPU6050_I2C_INST, DevAddr, DL_I2C_CONTROLLER_DIRECTION_TX, 1);
 
-    while (DL_I2C_getControllerStatus(MPU6050_I2C_INST) &
-           DL_I2C_CONTROLLER_STATUS_BUSY_BUS)
-        ;
-    /* Wait for I2C to be Idle */
-    while (!(DL_I2C_getControllerStatus(MPU6050_I2C_INST) &
-             DL_I2C_CONTROLLER_STATUS_IDLE))
-        ;
+//     while (DL_I2C_getControllerStatus(MPU6050_I2C_INST) &
+//            DL_I2C_CONTROLLER_STATUS_BUSY_BUS)
+//         ;
+//     /* Wait for I2C to be Idle */
+//     while (!(DL_I2C_getControllerStatus(MPU6050_I2C_INST) &
+//              DL_I2C_CONTROLLER_STATUS_IDLE))
+//         ;
 
-    DL_I2C_flushControllerTXFIFO(MPU6050_I2C_INST);
+//     DL_I2C_flushControllerTXFIFO(MPU6050_I2C_INST);
 
-    /* Send a read request to Target */
-    DL_I2C_startControllerTransfer(
-        MPU6050_I2C_INST, DevAddr, DL_I2C_CONTROLLER_DIRECTION_RX, count);
+//     /* Send a read request to Target */
+//     DL_I2C_startControllerTransfer(
+//         MPU6050_I2C_INST, DevAddr, DL_I2C_CONTROLLER_DIRECTION_RX, count);
 
-    for (uint8_t i = 0; i < count; i++) {
-        while (DL_I2C_isControllerRXFIFOEmpty(MPU6050_I2C_INST))
-            ;
-        reg_data[i] = DL_I2C_receiveControllerData(MPU6050_I2C_INST);
-    }
-}
+//     for (uint8_t i = 0; i < count; i++) {
+//         while (DL_I2C_isControllerRXFIFOEmpty(MPU6050_I2C_INST))
+//             ;
+//         reg_data[i] = DL_I2C_receiveControllerData(MPU6050_I2C_INST);
+//     }
+// }
 
-//ÏÂÃæ°áµÄÊÇÎÞÃû´´ÐÂµÄÓ²¼þIIC¶ÁÈ¡MPU6050
-#define	SMPLRT_DIV		0x19
-#define	MPU_CONFIG		0x1A
-#define	GYRO_CONFIG		0x1B
-#define	ACCEL_CONFIG	        0x1C
-#define	ACCEL_XOUT_H	        0x3B
-#define	ACCEL_XOUT_L	        0x3C
-#define	ACCEL_YOUT_H	        0x3D
-#define	ACCEL_YOUT_L	        0x3E
-#define	ACCEL_ZOUT_H	        0x3F
-#define	ACCEL_ZOUT_L	        0x40
-#define	TEMP_OUT_H		0x41
-#define	TEMP_OUT_L		0x42
-#define	GYRO_XOUT_H		0x43
-#define	GYRO_XOUT_L		0x44
-#define	GYRO_YOUT_H		0x45
-#define	GYRO_YOUT_L		0x46
-#define	GYRO_ZOUT_H		0x47
-#define	GYRO_ZOUT_L		0x48
-#define	PWR_MGMT_1		0x6B
-#define	WHO_AM_I		0x75
-#define USER_CTRL		0x6A
-#define INT_PIN_CFG		0x37
+// //ä¸‹é¢æ¬çš„æ˜¯æ— ååˆ›æ–°çš„ç¡¬ä»¶IICè¯»å–MPU6050
+// #define	SMPLRT_DIV		0x19
+// #define	MPU_CONFIG		0x1A
+// #define	GYRO_CONFIG		0x1B
+// #define	ACCEL_CONFIG	        0x1C
+// #define	ACCEL_XOUT_H	        0x3B
+// #define	ACCEL_XOUT_L	        0x3C
+// #define	ACCEL_YOUT_H	        0x3D
+// #define	ACCEL_YOUT_L	        0x3E
+// #define	ACCEL_ZOUT_H	        0x3F
+// #define	ACCEL_ZOUT_L	        0x40
+// #define	TEMP_OUT_H		0x41
+// #define	TEMP_OUT_L		0x42
+// #define	GYRO_XOUT_H		0x43
+// #define	GYRO_XOUT_L		0x44
+// #define	GYRO_YOUT_H		0x45
+// #define	GYRO_YOUT_L		0x46
+// #define	GYRO_ZOUT_H		0x47
+// #define	GYRO_ZOUT_L		0x48
+// #define	PWR_MGMT_1		0x6B
+// #define	WHO_AM_I		0x75
+// #define USER_CTRL		0x6A
+// #define INT_PIN_CFG		0x37
 
-void Single_WriteI2C(unsigned char SlaveAddress,unsigned char REG_Address,unsigned char REG_data){
-	I2C_WriteReg(SlaveAddress,REG_Address,&REG_data,1);
-}
-unsigned char Single_ReadI2C(unsigned char SlaveAddress,unsigned char REG_Address){
-	uint8_t data;
-	I2C_ReadReg(SlaveAddress,REG_Address,&data,1);
-	return data;
-}
-#define imu_adress 0x68
+// void Single_WriteI2C(unsigned char SlaveAddress,unsigned char REG_Address,unsigned char REG_data){
+// 	I2C_WriteReg(SlaveAddress,REG_Address,&REG_data,1);
+// }
+// unsigned char Single_ReadI2C(unsigned char SlaveAddress,unsigned char REG_Address){
+// 	uint8_t data;
+// 	I2C_ReadReg(SlaveAddress,REG_Address,&data,1);
+// 	return data;
+// }
+// #define imu_adress 0x68
 
-uint8_t read_imu[5];
-void mpu6050_init(void){
-  Single_WriteI2C(imu_adress,PWR_MGMT_1  , 0x00);//¹Ø±ÕËùÓÐÖÐ¶Ï,½â³ýÐÝÃß
-  Single_WriteI2C(imu_adress,SMPLRT_DIV  , 0x09);// sample rate.  Fsample= 1Khz/(<this value>+1) = 1000Hz
-  Single_WriteI2C(imu_adress,MPU_CONFIG  , 0x06);//
-  Single_WriteI2C(imu_adress,GYRO_CONFIG , 0x18);//
-  Single_WriteI2C(imu_adress,ACCEL_CONFIG, 0x18);// 
+// uint8_t read_imu[5];
+// void mpu6050_init(void){
+//   Single_WriteI2C(imu_adress,PWR_MGMT_1  , 0x00);//å…³é—­æ‰€æœ‰ä¸­æ–­,è§£é™¤ä¼‘çœ 
+//   Single_WriteI2C(imu_adress,SMPLRT_DIV  , 0x09);// sample rate.  Fsample= 1Khz/(<this value>+1) = 1000Hz
+//   Single_WriteI2C(imu_adress,MPU_CONFIG  , 0x06);//
+//   Single_WriteI2C(imu_adress,GYRO_CONFIG , 0x18);//
+//   Single_WriteI2C(imu_adress,ACCEL_CONFIG, 0x18);// 
 	
-	read_imu[0]=Single_ReadI2C(imu_adress,PWR_MGMT_1);
-	read_imu[1]=Single_ReadI2C(imu_adress,SMPLRT_DIV);
-	read_imu[2]=Single_ReadI2C(imu_adress,MPU_CONFIG);
-	read_imu[3]=Single_ReadI2C(imu_adress,GYRO_CONFIG);
-	read_imu[4]=Single_ReadI2C(imu_adress,ACCEL_CONFIG);
-}
-void mpu6050_read(int16_t *gyro,int16_t *accel,float *temperature){
-	uint8_t buf[14];
-	int16_t temp;
-	I2C_ReadReg(imu_adress,ACCEL_XOUT_H,buf,14);
-	accel[0]=(int16_t)((buf[0]<<8)|buf[1]);
-	accel[1]=(int16_t)((buf[2]<<8)|buf[3]);
-	accel[2]=(int16_t)((buf[4]<<8)|buf[5]);	
-	temp		=(int16_t)((buf[6]<<8)|buf[7]);
-	gyro[0]	=(int16_t)((buf[8]<<8)|buf[9]);
-	gyro[1]	=(int16_t)((buf[10]<<8)|buf[11]);
-	gyro[2]	=(int16_t)((buf[12]<<8)|buf[13]);	
-	*temperature=36.53f+(float)(temp/340.0f);	
-}
+// 	read_imu[0]=Single_ReadI2C(imu_adress,PWR_MGMT_1);
+// 	read_imu[1]=Single_ReadI2C(imu_adress,SMPLRT_DIV);
+// 	read_imu[2]=Single_ReadI2C(imu_adress,MPU_CONFIG);
+// 	read_imu[3]=Single_ReadI2C(imu_adress,GYRO_CONFIG);
+// 	read_imu[4]=Single_ReadI2C(imu_adress,ACCEL_CONFIG);
+// }
+// void mpu6050_read(int16_t *gyro,int16_t *accel,float *temperature){
+// 	uint8_t buf[14];
+// 	int16_t temp;
+// 	I2C_ReadReg(imu_adress,ACCEL_XOUT_H,buf,14);
+// 	accel[0]=(int16_t)((buf[0]<<8)|buf[1]);
+// 	accel[1]=(int16_t)((buf[2]<<8)|buf[3]);
+// 	accel[2]=(int16_t)((buf[4]<<8)|buf[5]);	
+// 	temp		=(int16_t)((buf[6]<<8)|buf[7]);
+// 	gyro[0]	=(int16_t)((buf[8]<<8)|buf[9]);
+// 	gyro[1]	=(int16_t)((buf[10]<<8)|buf[11]);
+// 	gyro[2]	=(int16_t)((buf[12]<<8)|buf[13]);	
+// 	*temperature=36.53f+(float)(temp/340.0f);	
+// }
 
-/*-------------------------------------------------------------------------------------------*/
-/*------------------------------------½Ç¶È¼ÆËã²¿·Ö-------------------------------------------*/
-/*-------------------------------------------------------------------------------------------*/
-/*---------------ÍÓÂÝÒÇ²É¼¯---------------------*/
-#define GYRO_GATHER   	700 //Ô­À´ÊÇ100
-#define RtA 			57.324841f				
-#define AtR    			0.0174533f				
-#define Acc_G 			0.0011963f				
-#define Gyro_G 			0.03051756f				
-#define Gyro_Gr			0.0005426f
+// /*-------------------------------------------------------------------------------------------*/
+// /*------------------------------------è§’åº¦è®¡ç®—éƒ¨åˆ†-------------------------------------------*/
+// /*-------------------------------------------------------------------------------------------*/
+// /*---------------é™€èžºä»ªé‡‡é›†---------------------*/
+// #define GYRO_GATHER   	700 //åŽŸæ¥æ˜¯100
+// #define RtA 			57.324841f				
+// #define AtR    			0.0174533f				
+// #define Acc_G 			0.0011963f				
+// #define Gyro_G 			0.03051756f				
+// #define Gyro_Gr			0.0005426f
 
-#define Offset_Times 	200.0		//ÉÏµçÐ£×¼´ÎÊý
-#define Sampling_Time	0.01		//²ÉÑù¶ÁÈ¡Ê±¼ä10ms
+// #define Offset_Times 	200.0		//ä¸Šç”µæ ¡å‡†æ¬¡æ•°
+// #define Sampling_Time	0.01		//é‡‡æ ·è¯»å–æ—¶é—´10ms
 
-#define IIR_ORDER     4      //Ê¹ÓÃIIRÂË²¨Æ÷µÄ½×Êý
-double b_IIR[IIR_ORDER+1] ={0.0008f, 0.0032f, 0.0048f, 0.0032f, 0.0008f};  //ÏµÊýb
-double a_IIR[IIR_ORDER+1] ={1.0000f, -3.0176f, 3.5072f, -1.8476f, 0.3708f};//ÏµÊýa
-double InPut_IIR[3][IIR_ORDER+1]  = {0};
-double OutPut_IIR[3][IIR_ORDER+1] = {0};
+// #define IIR_ORDER     4      //ä½¿ç”¨IIRæ»¤æ³¢å™¨çš„é˜¶æ•°
+// double b_IIR[IIR_ORDER+1] ={0.0008f, 0.0032f, 0.0048f, 0.0032f, 0.0008f};  //ç³»æ•°b
+// double a_IIR[IIR_ORDER+1] ={1.0000f, -3.0176f, 3.5072f, -1.8476f, 0.3708f};//ç³»æ•°a
+// double InPut_IIR[3][IIR_ORDER+1]  = {0};
+// double OutPut_IIR[3][IIR_ORDER+1] = {0};
 
-void MPU6050_ReadDatas_Proc(void){
-	static uint16_t time=0;//³õÊ¼»¯Ð£×¼´ÎÊý
-	mpu6050_read(mpu6050.Gyro_Original,mpu6050.Accel_Original,&mpu6050.temperature);
-	if(time<Offset_Times)//¼ÆËã³õÊ¼Ð£×¼Öµ
-	{time++;
-		mpu6050.Accel_Offset[0]+=(float)mpu6050.Accel_Original[0]/Offset_Times;//¶ÁÈ¡Êý¾Ý¼ÆËãÆ«²î
-		mpu6050.Accel_Offset[1]+=(float)mpu6050.Accel_Original[1]/Offset_Times;//¶ÁÈ¡Êý¾Ý¼ÆËãÆ«²î
-		mpu6050.Accel_Offset[2]+=(float)mpu6050.Accel_Original[2]/Offset_Times;//¶ÁÈ¡Êý¾Ý¼ÆËãÆ«²î
-		mpu6050.Gyro_Offset[0] +=(float)mpu6050.Gyro_Original[0]/Offset_Times;//¶ÁÈ¡Êý¾Ý¼ÆËãÆ«²î
-		mpu6050.Gyro_Offset[1] +=(float)mpu6050.Gyro_Original[1]/Offset_Times;//¶ÁÈ¡Êý¾Ý¼ÆËãÆ«²î
-		mpu6050.Gyro_Offset[2] +=(float)mpu6050.Gyro_Original[2]/Offset_Times;//¶ÁÈ¡Êý¾Ý¼ÆËãÆ«²î
-	}
-	else
-	{	// ¼ÓËÙ¶ÈÖµ¸³Öµ£¨¼õÈ¥ÁãÆ¯£©
-		mpu6050.Accel_Calulate[0] = mpu6050.Accel_Original[0];// - mpu6050.Accel_Offset[0];//½Ç¼ÓËÙ¶È²»ÓÃ
-		mpu6050.Accel_Calulate[1] = mpu6050.Accel_Original[1];// - mpu6050.Accel_Offset[1];
-		mpu6050.Accel_Calulate[2] = mpu6050.Accel_Original[2];// - mpu6050.Accel_Offset[2];
-		// ÍÓÂÝÒÇÖµ¸³Öµ£¨¼õÈ¥ÁãÆ¯£©
-		mpu6050.Gyro_Calulate[0] = mpu6050.Gyro_Original[0] - mpu6050.Gyro_Offset[0];
-		mpu6050.Gyro_Calulate[1] = mpu6050.Gyro_Original[1] - mpu6050.Gyro_Offset[1];
-		mpu6050.Gyro_Calulate[2] = mpu6050.Gyro_Original[2] - mpu6050.Gyro_Offset[2];
+// void MPU6050_ReadDatas_Proc(void){
+// 	static uint16_t time=0;//åˆå§‹åŒ–æ ¡å‡†æ¬¡æ•°
+// 	mpu6050_read(mpu6050.Gyro_Original,mpu6050.Accel_Original,&mpu6050.temperature);
+// 	if(time<Offset_Times)//è®¡ç®—åˆå§‹æ ¡å‡†å€¼
+// 	{time++;
+// 		mpu6050.Accel_Offset[0]+=(float)mpu6050.Accel_Original[0]/Offset_Times;//è¯»å–æ•°æ®è®¡ç®—åå·®
+// 		mpu6050.Accel_Offset[1]+=(float)mpu6050.Accel_Original[1]/Offset_Times;//è¯»å–æ•°æ®è®¡ç®—åå·®
+// 		mpu6050.Accel_Offset[2]+=(float)mpu6050.Accel_Original[2]/Offset_Times;//è¯»å–æ•°æ®è®¡ç®—åå·®
+// 		mpu6050.Gyro_Offset[0] +=(float)mpu6050.Gyro_Original[0]/Offset_Times;//è¯»å–æ•°æ®è®¡ç®—åå·®
+// 		mpu6050.Gyro_Offset[1] +=(float)mpu6050.Gyro_Original[1]/Offset_Times;//è¯»å–æ•°æ®è®¡ç®—åå·®
+// 		mpu6050.Gyro_Offset[2] +=(float)mpu6050.Gyro_Original[2]/Offset_Times;//è¯»å–æ•°æ®è®¡ç®—åå·®
+// 	}
+// 	else
+// 	{	// åŠ é€Ÿåº¦å€¼èµ‹å€¼ï¼ˆå‡åŽ»é›¶æ¼‚ï¼‰
+// 		mpu6050.Accel_Calulate[0] = mpu6050.Accel_Original[0];// - mpu6050.Accel_Offset[0];//è§’åŠ é€Ÿåº¦ä¸ç”¨
+// 		mpu6050.Accel_Calulate[1] = mpu6050.Accel_Original[1];// - mpu6050.Accel_Offset[1];
+// 		mpu6050.Accel_Calulate[2] = mpu6050.Accel_Original[2];// - mpu6050.Accel_Offset[2];
+// 		// é™€èžºä»ªå€¼èµ‹å€¼ï¼ˆå‡åŽ»é›¶æ¼‚ï¼‰
+// 		mpu6050.Gyro_Calulate[0] = mpu6050.Gyro_Original[0] - mpu6050.Gyro_Offset[0];
+// 		mpu6050.Gyro_Calulate[1] = mpu6050.Gyro_Original[1] - mpu6050.Gyro_Offset[1];
+// 		mpu6050.Gyro_Calulate[2] = mpu6050.Gyro_Original[2] - mpu6050.Gyro_Offset[2];
 		
-		/***********½Ç¼ÓËÙ¶ÈÂË²¨£¨·½·¨¶þÑ¡Ò»£©***********/
+// 		/***********è§’åŠ é€Ÿåº¦æ»¤æ³¢ï¼ˆæ–¹æ³•äºŒé€‰ä¸€ï¼‰***********/
 	
-		//Ò»¡¢½Ç¼ÓËÙ¶ÈIIRÂË²¨
-//		mpu6050.Accel_Average[0] = IIR_I_Filter(mpu6050.Accel_Calulate[0], InPut_IIR[0], OutPut_IIR[0], b_IIR, IIR_ORDER+1, a_IIR, IIR_ORDER+1);
-//		mpu6050.Accel_Average[1] = IIR_I_Filter(mpu6050.Accel_Calulate[1], InPut_IIR[1], OutPut_IIR[1], b_IIR, IIR_ORDER+1, a_IIR, IIR_ORDER+1);
-//		mpu6050.Accel_Average[2] = IIR_I_Filter(mpu6050.Accel_Calulate[2], InPut_IIR[2], OutPut_IIR[2], b_IIR, IIR_ORDER+1, a_IIR, IIR_ORDER+1);
-		//¶þ¡¢½Ç¼ÓËÙ¶È¿¨¶ûÂüÂË²¨·½·¨£º
-		static struct KalmanFilter EKF[3]={{0.02,0,0,0,0.001,0.543},{0.02,0,0,0,0.001,0.543},{0.02,0,0,0,0.001,0.543}};
-		kalmanfiter(&EKF[0],(float)mpu6050.Accel_Calulate[0]);  
-		mpu6050.Accel_Average[0] =  (int16_t)EKF[0].Out;
-		kalmanfiter(&EKF[1],(float)mpu6050.Accel_Calulate[1]);  
-		mpu6050.Accel_Average[1] =  (int16_t)EKF[1].Out;
-		kalmanfiter(&EKF[2],(float)mpu6050.Accel_Calulate[2]);  
-		mpu6050.Accel_Average[2] =  (int16_t)EKF[2].Out;
+// 		//ä¸€ã€è§’åŠ é€Ÿåº¦IIRæ»¤æ³¢
+// //		mpu6050.Accel_Average[0] = IIR_I_Filter(mpu6050.Accel_Calulate[0], InPut_IIR[0], OutPut_IIR[0], b_IIR, IIR_ORDER+1, a_IIR, IIR_ORDER+1);
+// //		mpu6050.Accel_Average[1] = IIR_I_Filter(mpu6050.Accel_Calulate[1], InPut_IIR[1], OutPut_IIR[1], b_IIR, IIR_ORDER+1, a_IIR, IIR_ORDER+1);
+// //		mpu6050.Accel_Average[2] = IIR_I_Filter(mpu6050.Accel_Calulate[2], InPut_IIR[2], OutPut_IIR[2], b_IIR, IIR_ORDER+1, a_IIR, IIR_ORDER+1);
+// 		//äºŒã€è§’åŠ é€Ÿåº¦å¡å°”æ›¼æ»¤æ³¢æ–¹æ³•ï¼š
+// 		static struct KalmanFilter EKF[3]={{0.02,0,0,0,0.001,0.543},{0.02,0,0,0,0.001,0.543},{0.02,0,0,0,0.001,0.543}};
+// 		kalmanfiter(&EKF[0],(float)mpu6050.Accel_Calulate[0]);  
+// 		mpu6050.Accel_Average[0] =  (int16_t)EKF[0].Out;
+// 		kalmanfiter(&EKF[1],(float)mpu6050.Accel_Calulate[1]);  
+// 		mpu6050.Accel_Average[1] =  (int16_t)EKF[1].Out;
+// 		kalmanfiter(&EKF[2],(float)mpu6050.Accel_Calulate[2]);  
+// 		mpu6050.Accel_Average[2] =  (int16_t)EKF[2].Out;
 		
-		/*******************½ÇËÙ¶ÈÂË²¨********************/
-		static float x,y,z;
-		//ÍÓÂÝÒÇÖµÒ»½×µÍÍ¨ÂË²¨£¨ÉÏ¸öÊý¾Ý£¬ÏÖÔÚµÄÊý¾Ý£¬»¥²¹ÂË²¨µÄÏµÊý£©Ò²³Æ»¥²¹ÂË²¨·¨
-		mpu6050.Gyro_Average[0] = LPF_1st(x,mpu6050.Gyro_Calulate[0],0.386f);	x = mpu6050.Gyro_Average[0];
-		mpu6050.Gyro_Average[1]=  LPF_1st(y,mpu6050.Gyro_Calulate[1],0.386f);	y = mpu6050.Gyro_Average[1];
-		mpu6050.Gyro_Average[2] = LPF_1st(z,mpu6050.Gyro_Calulate[2],0.386f);   z = mpu6050.Gyro_Average[2];
-	}
-}
-#define MPU_Aceel_Gyro_Kp	0.95
-float pitch2,roll2,Yaw;
-float Gyro_Z_Measeure = 0;
-//»ñÈ¡Å·À­½Ç
-void AHRS_Geteuler(void){
-	MPU6050_ReadDatas_Proc();//¶ÁÈ¡ÂË²¨Êý¾Ý
+// 		/*******************è§’é€Ÿåº¦æ»¤æ³¢********************/
+// 		static float x,y,z;
+// 		//é™€èžºä»ªå€¼ä¸€é˜¶ä½Žé€šæ»¤æ³¢ï¼ˆä¸Šä¸ªæ•°æ®ï¼ŒçŽ°åœ¨çš„æ•°æ®ï¼Œäº’è¡¥æ»¤æ³¢çš„ç³»æ•°ï¼‰ä¹Ÿç§°äº’è¡¥æ»¤æ³¢æ³•
+// 		mpu6050.Gyro_Average[0] = LPF_1st(x,mpu6050.Gyro_Calulate[0],0.386f);	x = mpu6050.Gyro_Average[0];
+// 		mpu6050.Gyro_Average[1]=  LPF_1st(y,mpu6050.Gyro_Calulate[1],0.386f);	y = mpu6050.Gyro_Average[1];
+// 		mpu6050.Gyro_Average[2] = LPF_1st(z,mpu6050.Gyro_Calulate[2],0.386f);   z = mpu6050.Gyro_Average[2];
+// 	}
+// }
+// #define MPU_Aceel_Gyro_Kp	0.95
+// float pitch2,roll2,Yaw;
+// float Gyro_Z_Measeure = 0;
+// //èŽ·å–æ¬§æ‹‰è§’
+// void AHRS_Geteuler(void){
+// 	MPU6050_ReadDatas_Proc();//è¯»å–æ»¤æ³¢æ•°æ®
 	
-	float ax,ay,az;
-	ax=mpu6050.Accel_Average[0];
-	ay=mpu6050.Accel_Average[1];
-	az=mpu6050.Accel_Average[2];
+// 	float ax,ay,az;
+// 	ax=mpu6050.Accel_Average[0];
+// 	ay=mpu6050.Accel_Average[1];
+// 	az=mpu6050.Accel_Average[2];
 	
-	//Ò»¡¢½Ç¼ÓËÙ¶ÈºÍ½ÇËÙ¶È½âËãµÄ ¸©Ñö½Ç ºÍ ºá¹ö½Ç ½øÐÐ½áºÏ
-	float pitch1	= 	RtA*atan(ay/sqrtf(ax*ax+az*az));  // ¸©Ñö½Ç
-	float roll1		=	-RtA*atan(ax/sqrtf(ay*ay+az*az)); // ºá¹ö½Ç
-	pitch2  += (mpu6050.Gyro_Average[0])*2000/32768*Sampling_Time;//¸©Ñö½Ç
-	roll2	+= (mpu6050.Gyro_Average[1])*2000/32768*Sampling_Time;//ºá¹ö½Ç
-	mpu6050.Pitch =	 pitch1*MPU_Aceel_Gyro_Kp+pitch2*(1-MPU_Aceel_Gyro_Kp);		// ¸©Ñö½Ç
-	mpu6050.Roll  =  roll1*MPU_Aceel_Gyro_Kp+roll2*(1-MPU_Aceel_Gyro_Kp);	 		// ºá¹ö½Ç
-	//¶þ¡¢½Ç¼ÓËÙ¶È½âËãµÄ ¸©Ñö½Ç ºÍ ºá¹ö½Ç
-//	mpu6050.Pitch =	RtA*atan(ay/sqrtf(ax*ax+az*az)); // ¸©Ñö½Ç
-//	mpu6050.Roll = -RtA*atan(ax/sqrtf(ay*ay+az*az)); // ºá¹ö½Ç
-	//Èý¡¢½ÇËÙ¶È½âËãµÄ ¸©Ñö½Ç ºÍ ºá¹ö½Ç
-//	mpu6050.Pitch 	+= (mpu6050.Gyro_Average[0])*2000/32768*Sampling_Time; // ¸©Ñö½Ç
-//	mpu6050.Roll 	+= (mpu6050.Gyro_Average[1])*2000/32768*Sampling_Time; // ºá¹ö½Ç
+// 	//ä¸€ã€è§’åŠ é€Ÿåº¦å’Œè§’é€Ÿåº¦è§£ç®—çš„ ä¿¯ä»°è§’ å’Œ æ¨ªæ»šè§’ è¿›è¡Œç»“åˆ
+// 	float pitch1	= 	RtA*atan(ay/sqrtf(ax*ax+az*az));  // ä¿¯ä»°è§’
+// 	float roll1		=	-RtA*atan(ax/sqrtf(ay*ay+az*az)); // æ¨ªæ»šè§’
+// 	pitch2  += (mpu6050.Gyro_Average[0])*2000/32768*Sampling_Time;//ä¿¯ä»°è§’
+// 	roll2	+= (mpu6050.Gyro_Average[1])*2000/32768*Sampling_Time;//æ¨ªæ»šè§’
+// 	mpu6050.Pitch =	 pitch1*MPU_Aceel_Gyro_Kp+pitch2*(1-MPU_Aceel_Gyro_Kp);		// ä¿¯ä»°è§’
+// 	mpu6050.Roll  =  roll1*MPU_Aceel_Gyro_Kp+roll2*(1-MPU_Aceel_Gyro_Kp);	 		// æ¨ªæ»šè§’
+// 	//äºŒã€è§’åŠ é€Ÿåº¦è§£ç®—çš„ ä¿¯ä»°è§’ å’Œ æ¨ªæ»šè§’
+// //	mpu6050.Pitch =	RtA*atan(ay/sqrtf(ax*ax+az*az)); // ä¿¯ä»°è§’
+// //	mpu6050.Roll = -RtA*atan(ax/sqrtf(ay*ay+az*az)); // æ¨ªæ»šè§’
+// 	//ä¸‰ã€è§’é€Ÿåº¦è§£ç®—çš„ ä¿¯ä»°è§’ å’Œ æ¨ªæ»šè§’
+// //	mpu6050.Pitch 	+= (mpu6050.Gyro_Average[0])*2000/32768*Sampling_Time; // ä¿¯ä»°è§’
+// //	mpu6050.Roll 	+= (mpu6050.Gyro_Average[1])*2000/32768*Sampling_Time; // æ¨ªæ»šè§’
 
-	//zÖá²»ÐèÒª¸ü¸Ä£¬×ã¹»ÎÈ¶¨ÁË
-	Gyro_Z_Measeure = (mpu6050.Gyro_Calulate[2])*2000/32768.0;
-	Yaw += Gyro_Z_Measeure*Sampling_Time;
-	mpu6050.Yaw  = 	Yaw + Yaw*0.16667;//ºóÃæÕâ¸ö0.16667ÊÇÎªÁË²¹³¥½Ç¶È
+// 	//zè½´ä¸éœ€è¦æ›´æ”¹ï¼Œè¶³å¤Ÿç¨³å®šäº†
+// 	Gyro_Z_Measeure = (mpu6050.Gyro_Calulate[2])*2000/32768.0;
+// 	Yaw += Gyro_Z_Measeure*Sampling_Time;
+// 	mpu6050.Yaw  = 	Yaw + Yaw*0.16667;//åŽé¢è¿™ä¸ª0.16667æ˜¯ä¸ºäº†è¡¥å¿è§’åº¦
 	
-}
-//-------------------------------------------MyFilter-------------------------------------------------//
-/*====================================================================================================*/
-/*====================================================================================================*
-** º¯ÊýÃû³Æ: IIR_I_Filter
-** ¹¦ÄÜÃèÊö: IIRÖ±½ÓIÐÍÂË²¨Æ÷
-** Êä    Èë: InData Îªµ±Ç°Êý¾Ý
-**           *x     ´¢´æÎ´ÂË²¨µÄÊý¾Ý
-**           *y     ´¢´æÂË²¨ºóµÄÊý¾Ý
-**           *b     ´¢´æÏµÊýb
-**           *a     ´¢´æÏµÊýa
-**           nb     Êý×é*bµÄ³¤¶È
-**           na     Êý×é*aµÄ³¤¶È
-**           LpfFactor
-** Êä    ³ö: OutData         
-** Ëµ    Ã÷: ÎÞ
-** º¯ÊýÔ­ÐÍ: y(n) = b0*x(n) + b1*x(n-1) + b2*x(n-2) -
-                    a1*y(n-1) - a2*y(n-2)
-**====================================================================================================*/
-/*====================================================================================================*/
-double IIR_I_Filter(double InData, double *x, double *y, double *b, short nb, double *a, short na){
-  double z1,z2;
-  short i;
-  double OutData;
+// }
+// //-------------------------------------------MyFilter-------------------------------------------------//
+// /*====================================================================================================*/
+// /*====================================================================================================*
+// ** å‡½æ•°åç§°: IIR_I_Filter
+// ** åŠŸèƒ½æè¿°: IIRç›´æŽ¥Iåž‹æ»¤æ³¢å™¨
+// ** è¾“    å…¥: InData ä¸ºå½“å‰æ•°æ®
+// **           *x     å‚¨å­˜æœªæ»¤æ³¢çš„æ•°æ®
+// **           *y     å‚¨å­˜æ»¤æ³¢åŽçš„æ•°æ®
+// **           *b     å‚¨å­˜ç³»æ•°b
+// **           *a     å‚¨å­˜ç³»æ•°a
+// **           nb     æ•°ç»„*bçš„é•¿åº¦
+// **           na     æ•°ç»„*açš„é•¿åº¦
+// **           LpfFactor
+// ** è¾“    å‡º: OutData         
+// ** è¯´    æ˜Ž: æ— 
+// ** å‡½æ•°åŽŸåž‹: y(n) = b0*x(n) + b1*x(n-1) + b2*x(n-2) -
+//                     a1*y(n-1) - a2*y(n-2)
+// **====================================================================================================*/
+// /*====================================================================================================*/
+// double IIR_I_Filter(double InData, double *x, double *y, double *b, short nb, double *a, short na){
+//   double z1,z2;
+//   short i;
+//   double OutData;
   
-  for(i=nb-1; i>0; i--)
-  {
-    x[i]=x[i-1];
-  }
+//   for(i=nb-1; i>0; i--)
+//   {
+//     x[i]=x[i-1];
+//   }
   
-  x[0] = InData;
+//   x[0] = InData;
   
-  for(z1=0,i=0; i<nb; i++)
-  {
-    z1 += x[i]*b[i];
-  }
+//   for(z1=0,i=0; i<nb; i++)
+//   {
+//     z1 += x[i]*b[i];
+//   }
   
-  for(i=na-1; i>0; i--)
-  {
-    y[i]=y[i-1];
-  }
+//   for(i=na-1; i>0; i--)
+//   {
+//     y[i]=y[i-1];
+//   }
   
-  for(z2=0,i=1; i<na; i++)
-  {
-    z2 += y[i]*a[i];
-  }
+//   for(z2=0,i=1; i<na; i++)
+//   {
+//     z2 += y[i]*a[i];
+//   }
   
-  y[0] = z1 - z2; 
-  OutData = y[0];
+//   y[0] = z1 - z2; 
+//   OutData = y[0];
     
-  return OutData;
-}
-/*====================================================================================================*/
-/*====================================================================================================*
-**º¯Êý : LPF_1st
-**¹¦ÄÜ : Ò»½×µÍÍ¨ÂË²¨
-**ÊäÈë :  
-**Ý”³ö : None
-**±¸×¢ : None
-**====================================================================================================*/
-/*====================================================================================================*/
-float LPF_1st(float oldData, float newData, float lpf_factor){
-	return oldData * (1 - lpf_factor) + newData * lpf_factor;    //ÉÏ¸öÊý¾Ý*Ò»¶¨µÄ±ÈÀý+ÏÖÔÚµÄÊý¾Ý*Ò»¶¨µÄ±ÈÀý
-}
-//Ò»Î¬¿¨¶ûÂüÂË²¨
-void kalmanfiter(struct KalmanFilter *EKF,float input){
-	EKF->NewP = EKF->LastP + EKF->Q;
-	EKF->Kg = EKF->NewP / (EKF->NewP + EKF->R);
-	EKF->Out = EKF->Out + EKF->Kg * (input - EKF->Out);
-	EKF->LastP = (1 - EKF->Kg) * EKF->NewP;
-}
+//   return OutData;
+// }
+// /*====================================================================================================*/
+// /*====================================================================================================*
+// **å‡½æ•° : LPF_1st
+// **åŠŸèƒ½ : ä¸€é˜¶ä½Žé€šæ»¤æ³¢
+// **è¾“å…¥ :  
+// **è¼¸å‡º : None
+// **å¤‡æ³¨ : None
+// **====================================================================================================*/
+// /*====================================================================================================*/
+// float LPF_1st(float oldData, float newData, float lpf_factor){
+// 	return oldData * (1 - lpf_factor) + newData * lpf_factor;    //ä¸Šä¸ªæ•°æ®*ä¸€å®šçš„æ¯”ä¾‹+çŽ°åœ¨çš„æ•°æ®*ä¸€å®šçš„æ¯”ä¾‹
+// }
+// //ä¸€ç»´å¡å°”æ›¼æ»¤æ³¢
+// void kalmanfiter(struct KalmanFilter *EKF,float input){
+// 	EKF->NewP = EKF->LastP + EKF->Q;
+// 	EKF->Kg = EKF->NewP / (EKF->NewP + EKF->R);
+// 	EKF->Out = EKF->Out + EKF->Kg * (input - EKF->Out);
+// 	EKF->LastP = (1 - EKF->Kg) * EKF->NewP;
+// }

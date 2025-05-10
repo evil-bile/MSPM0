@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "key.h": "c"
+        "key.h": "c",
+        "ti_msp_dl_config.h": "c"
     }
 }

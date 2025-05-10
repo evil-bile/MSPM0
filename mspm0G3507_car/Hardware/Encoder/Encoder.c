@@ -1,139 +1,139 @@
-/*
-Íâ²¿ÖÐ¶ÏÐèÒªÕ¼ÓÃ4¸öGPIO£¬PORTÎªEncoder_PORT£¬PIN¶¨ÒåÎªEncoder_A_PIN£¬Encoder_B_PIN£¬Encoder_C_PIN£¬Encoder_D_PIN
-×¢£ºÕâÀïÓÐÐ©Òý½Å²É¼¯Íâ²¿ÖÐ¶ÏµÄÊý¾Ý»áÓÐÎÊÌâ£¬½¨ÒéÊ¹ÓÃÄ¬ÈÏB6£¬B7£¬B8£¬B9Òý½Å
-Ê¹ÓÃÇ°ÒªÊ¹ÄÜ±àÂëÆ÷ÖÐ¶ÏNVIC_EnableIRQ(Encoder_INT_IRQN);//±àÂëÆ÷ÖÐ¶ÏÊ¹ÄÜ
+// /*
+// å¤–éƒ¨ä¸­æ–­éœ€è¦å ç”¨4ä¸ªGPIOï¼ŒPORTä¸ºEncoder_PORTï¼ŒPINå®šä¹‰ä¸ºEncoder_A_PINï¼ŒEncoder_B_PINï¼ŒEncoder_C_PINï¼ŒEncoder_D_PIN
+// æ³¨ï¼šè¿™é‡Œæœ‰äº›å¼•è„šé‡‡é›†å¤–éƒ¨ä¸­æ–­çš„æ•°æ®ä¼šæœ‰é—®é¢˜ï¼Œå»ºè®®ä½¿ç”¨é»˜è®¤B6ï¼ŒB7ï¼ŒB8ï¼ŒB9å¼•è„š
+// ä½¿ç”¨å‰è¦ä½¿èƒ½ç¼–ç å™¨ä¸­æ–­NVIC_EnableIRQ(Encoder_INT_IRQN);//ç¼–ç å™¨ä¸­æ–­ä½¿èƒ½
 
-*  Ö»ÐèÒªµ÷ÓÃMEASURE_MOTORS_SPEED()º¯Êý£¬ÇÒMotor1_SpeedºÍMotor2_SpeedÎªµç»úÊµ¼ÊËÙ¶È
-*/
-#include "Encoder.h"
-#include "mpu6050.h"
-#include "key.h"
+// *  åªéœ€è¦è°ƒç”¨MEASURE_MOTORS_SPEED()å‡½æ•°ï¼Œä¸”Motor1_Speedå’ŒMotor2_Speedä¸ºç”µæœºå®žé™…é€Ÿåº¦
+// */
+// #include "Encoder.h"
+// #include "mpu6050.h"
+// #include "key.h"
 
-int32_t Motor1_Encoder_Value=0;
-int32_t Motor2_Encoder_Value=0;
+// int32_t Motor1_Encoder_Value=0;
+// int32_t Motor2_Encoder_Value=0;
 
-float Motor1_Speed = 0;
-float Motor2_Speed = 0;
+// float Motor1_Speed = 0;
+// float Motor2_Speed = 0;
 
-//Íâ²¿ÖÐ¶Ï¶ÁÈ¡±àÂëÆ÷µÄÖµ
-void GROUP1_IRQHandler(void){
-	if(DL_Interrupt_getStatusGroup(DL_INTERRUPT_GROUP_1,DL_INTERRUPT_GROUP1_GPIOB)){
-		uint32_t Encoder_GPIO_Int = DL_GPIO_getEnabledInterruptStatus(Encoder_PORT,Encoder_A_PIN | Encoder_B_PIN | Encoder_C_PIN | Encoder_D_PIN);
-		//Í¨µÀ1 ×óÂÖAÏà
-		if ((Encoder_GPIO_Int & Encoder_A_PIN) == Encoder_A_PIN){
-			DL_GPIO_clearInterruptStatus(Encoder_PORT, Encoder_A_PIN);
-			if(Read_Encoder_A == 1){ //ÉÏÉýÑØ
-				if (Read_Encoder_B == 0){
-					Motor1_Encoder_Value++;
-				}
-				else if(Read_Encoder_B == 1){
-					Motor1_Encoder_Value--;
-				}
-			}
-			else if(Read_Encoder_A == 0){//ÏÂ½µÑØ
-				if (Read_Encoder_B == 0){
-					Motor1_Encoder_Value--;
-				}
-				else if(Read_Encoder_B == 1){
-					Motor1_Encoder_Value++;
-				}
-			}
-		}		
-		//Í¨µÀ2 ×óÂÖBÏà
-		if ((Encoder_GPIO_Int & Encoder_B_PIN) == Encoder_B_PIN){
-			DL_GPIO_clearInterruptStatus(Encoder_PORT,Encoder_B_PIN);
-			if(Read_Encoder_B == 1){ //ÉÏÉýÑØ
-				if (Read_Encoder_A == 0){
-					Motor1_Encoder_Value--;
-				}
-				else if (Read_Encoder_A == 1){
-					Motor1_Encoder_Value++;
-				}
-			}
-			else if(Read_Encoder_B == 0){//ÏÂ½µÑØ
-				if (Read_Encoder_A == 0){
-					Motor1_Encoder_Value++;
-				}
-				else if (Read_Encoder_A == 1){
-					Motor1_Encoder_Value--;
-				}
-			}
-		}
-		//Í¨µÀ3 ÓÒÂÖAÏà		
-		if ((Encoder_GPIO_Int & Encoder_C_PIN) == Encoder_C_PIN){
-			DL_GPIO_clearInterruptStatus(Encoder_PORT, Encoder_C_PIN);
-			if(Read_Encoder_C == 1){ //ÉÏÉýÑØ
-				if (Read_Encoder_D  == 0){
-					Motor2_Encoder_Value++;
-				}
-				else if (Read_Encoder_D  == 1){
-					Motor2_Encoder_Value--;
-				}
-			}
-			else if(Read_Encoder_C == 0){//ÏÂ½µÑØ
-				if (Read_Encoder_D  == 0){
-					Motor2_Encoder_Value--;
-				}
-				else if (Read_Encoder_D  == 1){
-					Motor2_Encoder_Value++;
-				}
-			}
-		}		
-		//Í¨µÀ4 ÓÒÂÖBÏà
-		if ((Encoder_GPIO_Int & Encoder_D_PIN) == Encoder_D_PIN){
-			DL_GPIO_clearInterruptStatus(Encoder_PORT,Encoder_D_PIN);
-			if(Read_Encoder_D == 1){ //ÉÏÉýÑØ
-				if (Read_Encoder_C  == 0){
-					Motor2_Encoder_Value--;
-				}
-				else if (Read_Encoder_C  == 1){
-					Motor2_Encoder_Value++;
-				}
-			}
-			else if(Read_Encoder_D == 0){//ÏÂ½µÑØ
-				if (Read_Encoder_C  == 0){
-					Motor2_Encoder_Value++;
-				}
-				else if (Read_Encoder_C  == 1){
-					Motor2_Encoder_Value--;
-				}
-			}
-		}
-	}
-}
-//±àÂëÆ÷1¼ÆËãËÙ¶È
-void Motor1_Get_Speed(void){
-    short Encoder_TIM = 0;
-    float Speed = 0;
-    Encoder_TIM= Motor1_Encoder_Value;
-    Motor1_Encoder_Value=0;
-    Speed =(float)Encoder_TIM/(CC)*PI*RR;//¼ÆËãËÙ¶È
-    Motor1_Speed = Speed;
-}
-//±àÂëÆ÷2¼ÆËãËÙ¶È
-void Motor2_Get_Speed(void){
-    short Encoder_TIM = 0;
-    float Speed = 0;
-    Encoder_TIM= Motor2_Encoder_Value;
-    Motor2_Encoder_Value=0;
-    Speed =(float)Encoder_TIM/(CC)*PI*RR;//¼ÆËãËÙ¶È
-    Motor2_Speed = -Speed;
-}
-float Motor1_Lucheng,Motor2_Lucheng;
-float Measure_Distance = 0;
-//²âÁ¿ËùÓÐµç»úËÙ¶È
-void MEASURE_MOTORS_SPEED(void){
-	Motor1_Get_Speed();Motor2_Get_Speed();
+// //å¤–éƒ¨ä¸­æ–­è¯»å–ç¼–ç å™¨çš„å€¼
+// void GROUP1_IRQHandler(void){
+// 	if(DL_Interrupt_getStatusGroup(DL_INTERRUPT_GROUP_1,DL_INTERRUPT_GROUP1_GPIOB)){
+// 		uint32_t Encoder_GPIO_Int = DL_GPIO_getEnabledInterruptStatus(Encoder_PORT,Encoder_A_PIN | Encoder_B_PIN | Encoder_C_PIN | Encoder_D_PIN);
+// 		//é€šé“1 å·¦è½®Aç›¸
+// 		if ((Encoder_GPIO_Int & Encoder_A_PIN) == Encoder_A_PIN){
+// 			DL_GPIO_clearInterruptStatus(Encoder_PORT, Encoder_A_PIN);
+// 			if(Read_Encoder_A == 1){ //ä¸Šå‡æ²¿
+// 				if (Read_Encoder_B == 0){
+// 					Motor1_Encoder_Value++;
+// 				}
+// 				else if(Read_Encoder_B == 1){
+// 					Motor1_Encoder_Value--;
+// 				}
+// 			}
+// 			else if(Read_Encoder_A == 0){//ä¸‹é™æ²¿
+// 				if (Read_Encoder_B == 0){
+// 					Motor1_Encoder_Value--;
+// 				}
+// 				else if(Read_Encoder_B == 1){
+// 					Motor1_Encoder_Value++;
+// 				}
+// 			}
+// 		}		
+// 		//é€šé“2 å·¦è½®Bç›¸
+// 		if ((Encoder_GPIO_Int & Encoder_B_PIN) == Encoder_B_PIN){
+// 			DL_GPIO_clearInterruptStatus(Encoder_PORT,Encoder_B_PIN);
+// 			if(Read_Encoder_B == 1){ //ä¸Šå‡æ²¿
+// 				if (Read_Encoder_A == 0){
+// 					Motor1_Encoder_Value--;
+// 				}
+// 				else if (Read_Encoder_A == 1){
+// 					Motor1_Encoder_Value++;
+// 				}
+// 			}
+// 			else if(Read_Encoder_B == 0){//ä¸‹é™æ²¿
+// 				if (Read_Encoder_A == 0){
+// 					Motor1_Encoder_Value++;
+// 				}
+// 				else if (Read_Encoder_A == 1){
+// 					Motor1_Encoder_Value--;
+// 				}
+// 			}
+// 		}
+// 		//é€šé“3 å³è½®Aç›¸		
+// 		if ((Encoder_GPIO_Int & Encoder_C_PIN) == Encoder_C_PIN){
+// 			DL_GPIO_clearInterruptStatus(Encoder_PORT, Encoder_C_PIN);
+// 			if(Read_Encoder_C == 1){ //ä¸Šå‡æ²¿
+// 				if (Read_Encoder_D  == 0){
+// 					Motor2_Encoder_Value++;
+// 				}
+// 				else if (Read_Encoder_D  == 1){
+// 					Motor2_Encoder_Value--;
+// 				}
+// 			}
+// 			else if(Read_Encoder_C == 0){//ä¸‹é™æ²¿
+// 				if (Read_Encoder_D  == 0){
+// 					Motor2_Encoder_Value--;
+// 				}
+// 				else if (Read_Encoder_D  == 1){
+// 					Motor2_Encoder_Value++;
+// 				}
+// 			}
+// 		}		
+// 		//é€šé“4 å³è½®Bç›¸
+// 		if ((Encoder_GPIO_Int & Encoder_D_PIN) == Encoder_D_PIN){
+// 			DL_GPIO_clearInterruptStatus(Encoder_PORT,Encoder_D_PIN);
+// 			if(Read_Encoder_D == 1){ //ä¸Šå‡æ²¿
+// 				if (Read_Encoder_C  == 0){
+// 					Motor2_Encoder_Value--;
+// 				}
+// 				else if (Read_Encoder_C  == 1){
+// 					Motor2_Encoder_Value++;
+// 				}
+// 			}
+// 			else if(Read_Encoder_D == 0){//ä¸‹é™æ²¿
+// 				if (Read_Encoder_C  == 0){
+// 					Motor2_Encoder_Value++;
+// 				}
+// 				else if (Read_Encoder_C  == 1){
+// 					Motor2_Encoder_Value--;
+// 				}
+// 			}
+// 		}
+// 	}
+// }
+// //ç¼–ç å™¨1è®¡ç®—é€Ÿåº¦
+// void Motor1_Get_Speed(void){
+//     short Encoder_TIM = 0;
+//     float Speed = 0;
+//     Encoder_TIM= Motor1_Encoder_Value;
+//     Motor1_Encoder_Value=0;
+//     Speed =(float)Encoder_TIM/(CC)*PI*RR;//è®¡ç®—é€Ÿåº¦
+//     Motor1_Speed = Speed;
+// }
+// //ç¼–ç å™¨2è®¡ç®—é€Ÿåº¦
+// void Motor2_Get_Speed(void){
+//     short Encoder_TIM = 0;
+//     float Speed = 0;
+//     Encoder_TIM= Motor2_Encoder_Value;
+//     Motor2_Encoder_Value=0;
+//     Speed =(float)Encoder_TIM/(CC)*PI*RR;//è®¡ç®—é€Ÿåº¦
+//     Motor2_Speed = -Speed;
+// }
+// float Motor1_Lucheng,Motor2_Lucheng;
+// float Measure_Distance = 0;
+// //æµ‹é‡æ‰€æœ‰ç”µæœºé€Ÿåº¦
+// void MEASURE_MOTORS_SPEED(void){
+// 	Motor1_Get_Speed();Motor2_Get_Speed();
 	
-	Motor1_Lucheng += Motor1_Speed*SAMPLE_TIME;//Â·³ÌÀÛ¼Æ
-	Motor2_Lucheng += Motor2_Speed*SAMPLE_TIME;//Â·³ÌÀÛ¼Æ
-	Measure_Distance = Motor1_Lucheng/2.0 +Motor2_Lucheng/2.0;
+// 	Motor1_Lucheng += Motor1_Speed*SAMPLE_TIME;//è·¯ç¨‹ç´¯è®¡
+// 	Motor2_Lucheng += Motor2_Speed*SAMPLE_TIME;//è·¯ç¨‹ç´¯è®¡
+// 	Measure_Distance = Motor1_Lucheng/2.0 +Motor2_Lucheng/2.0;
 	
-	if(Measure_Distance>10000)
-	{
-		Measure_Distance = 0;
-		Motor1_Lucheng = 0;
-		Motor2_Lucheng = 0;
+// 	if(Measure_Distance>10000)
+// 	{
+// 		Measure_Distance = 0;
+// 		Motor1_Lucheng = 0;
+// 		Motor2_Lucheng = 0;
 		
-	}
-}
+// 	}
+// }

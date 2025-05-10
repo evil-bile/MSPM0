@@ -30,12 +30,15 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "oled.h"
+#include "menu.h"
 #include "ti_msp_dl_config.h"
 
 int main(void)
 {
     SYSCFG_DL_init();
-
+    OLED_Init();
     while (1) {
+        Menu_Car();
     }
 }
